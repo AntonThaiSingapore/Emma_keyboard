@@ -12,17 +12,48 @@
   <link rel="stylesheet" href="styles.css" />
 </head>
 <body>
+  <div class="artist-backdrop" aria-hidden="true">
+    <img id="artistPhotoA" class="artist-photo active" alt="">
+    <img id="artistPhotoB" class="artist-photo" alt="">
+    <div class="backdrop-wash"></div>
+    <div class="artist-caption"><strong id="artistTitle">Pop &amp; K-pop spotlights</strong><span>PHOTO: <a id="artistCredit" target="_blank" rel="noreferrer">Wikimedia Commons</a> · <a id="artistLicense" target="_blank" rel="noreferrer">LICENSE</a></span></div>
+  </div>
   <div class="ambient ambient-a"></div><div class="ambient ambient-b"></div>
   <main class="app-shell">
     <header class="topbar">
       <a class="brand" href="#" aria-label="Keylight home"><span class="brand-mark">k<span>.</span></span><span>keylight<span class="brand-sub">TYPING CLUB</span></span></a>
-      <div class="top-meta"><span class="live-dot"></span><span>YOUR PRACTICE SPACE</span><button id="settingsOpen" class="icon-button" aria-label="Open settings" title="Settings">☷</button></div>
+      <section class="music-dock" aria-label="YouTube or Spotify music player">
+        <div class="music-title"><span class="music-note">♫</span><span>MUSIC</span><span id="musicPlatform" class="platform-label">ADD A LINK</span></div>
+        <form id="musicForm" class="music-form">
+          <label class="sr-only" for="musicUrl">YouTube or Spotify link</label>
+          <input id="musicUrl" type="url" inputmode="url" placeholder="Paste a YouTube or Spotify link" autocomplete="url">
+          <button type="submit" class="small-action">Load</button>
+        </form>
+        <p id="musicStatus" class="music-status">Choose a track or playlist. Playback starts when you press play.</p>
+        <div id="musicPlayerWrap" class="music-player-wrap" hidden><iframe id="musicFrame" title="Music player" allow="autoplay; clipboard-write; encrypted-media; fullscreen; picture-in-picture" loading="lazy"></iframe></div>
+      </section>
+      <div class="top-meta"><span class="live-dot"></span><span>YOUR PRACTICE SPACE</span></div>
     </header>
 
     <section class="intro">
       <div class="eyebrow"><span class="sparkle">✳</span> THE TEN-FINGER METHOD</div>
       <h1>Find your <span>flow.</span></h1>
-      <p class="intro-copy">Small steps. Steady hands. You'll be typing without looking in no time.</p>
+      <p class="intro-copy">Small steps. Steady hands. You’ll be typing without looking in no time.</p>
+    </section>
+
+    <section class="settings-panel" aria-labelledby="settingsHeading">
+      <div class="settings-heading"><div><div class="eyebrow">MAKE IT YOURS</div><h2 id="settingsHeading">Practice settings</h2></div><button type="button" id="resetLevel" class="reset-button">↻ Restart this level</button></div>
+      <div class="settings-grid">
+        <label class="range-setting"><span class="range-label"><b>Practice text size</b><output id="fontSizeValue">48 px</output></span><small>Make each prompt easier to follow</small><input id="fontSize" type="range" min="28" max="72" value="48" aria-label="Practice text size"></label>
+        <label class="range-setting"><span class="range-label"><b>Level pass score</b><output id="passScoreValue">60%</output></span><small>Score needed to unlock the next level</small><input id="passScore" type="range" min="40" max="100" step="10" value="60" aria-label="Level pass score"></label>
+        <label class="range-setting"><span class="range-label"><b>Background changes</b><output id="photoSecondsValue">15 sec</output></span><small>Choose how long each artist photo stays</small><input id="photoSeconds" type="range" min="5" max="120" step="5" value="15" aria-label="Background image duration"></label>
+        <div class="toggle-setting"><div><b>Wrong-key sound</b><small>Play a soft sound on mistakes</small></div><button type="button" class="switch on" id="sfxToggle" role="switch" aria-checked="true" aria-label="Wrong-key sound"><i></i></button></div>
+      </div>
+      <div class="custom-row">
+        <label for="customPhotoUrl"><b>Add a background image</b><small>Paste an HTTPS image URL to include it in the rotation</small></label>
+        <div class="input-action"><input id="customPhotoUrl" type="url" inputmode="url" placeholder="https://…" autocomplete="url"><button type="button" id="addPhoto" class="small-action">Add image</button></div>
+        <span id="photoStatus" class="photo-status" aria-live="polite">Artist photos rotate automatically.</span>
+      </div>
     </section>
 
     <section class="game-card" aria-label="Typing practice game">
@@ -40,34 +71,26 @@
 
       <div class="keyboard-scene">
         <div class="hands" aria-hidden="true">
-          <svg class="hand hand-left" viewBox="0 0 300 340"><g class="hand-shape">
-            <path d="M99 225 C86 207 79 184 72 159 L45 75 C40 61 46 50 57 47 C68 44 76 51 81 65 L109 132 L94 42 C92 27 100 18 112 18 C124 18 130 27 132 41 L146 125 L145 27 C145 12 153 5 165 6 C178 7 183 16 182 31 L184 127 L199 49 C202 35 211 29 222 32 C234 35 237 45 234 59 L217 151 C234 135 247 133 256 142 C266 152 259 163 249 176 L218 222 C207 239 201 267 199 291 L93 291 C96 264 105 241 99 225Z"/>
+          <svg class="hand hand-left" viewBox="0 0 300 340">
+            <path class="hand-shape" d="M99 225 C86 207 79 184 72 159 L45 75 C40 61 46 50 57 47 C68 44 76 51 81 65 L109 132 L94 42 C92 27 100 18 112 18 C124 18 130 27 132 41 L146 125 L145 27 C145 12 153 5 165 6 C178 7 183 16 182 31 L184 127 L199 49 C202 35 211 29 222 32 C234 35 237 45 234 59 L217 151 C234 135 247 133 256 142 C266 152 259 163 249 176 L218 222 C207 239 201 267 199 291 L93 291 C96 264 105 241 99 225Z"/>
             <path class="palm-line" d="M121 177 Q154 192 190 176 M111 202 Q151 217 204 196"/>
-            <circle class="finger-dot dot-pinky" cx="58" cy="65" r="7"/><circle class="finger-dot dot-ring" cx="111" cy="39" r="7"/><circle class="finger-dot dot-middle" cx="161" cy="25" r="7"/><circle class="finger-dot dot-index" cx="219" cy="48" r="7"/><circle class="finger-dot dot-thumb" cx="251" cy="151" r="7"/>
-          </g></svg>
-          <svg class="hand hand-right" viewBox="0 0 300 340"><g class="hand-shape">
-            <path d="M201 225 C214 207 221 184 228 159 L255 75 C260 61 254 50 243 47 C232 44 224 51 219 65 L191 132 L206 42 C208 27 200 18 188 18 C176 18 170 27 168 41 L154 125 L155 27 C155 12 147 5 135 6 C122 7 117 16 118 31 L116 127 L101 49 C98 35 89 29 78 32 C66 35 63 45 66 59 L83 151 C66 135 53 133 44 142 C34 152 41 163 51 176 L82 222 C93 239 99 267 101 291 L207 291 C204 264 195 241 201 225Z"/>
+            <path class="finger-track strip-pinky" d="M58 61 L82 137"/><path class="finger-track strip-ring" d="M111 39 L128 137"/><path class="finger-track strip-middle" d="M161 25 L163 137"/><path class="finger-track strip-index" d="M219 48 L204 141"/><path class="finger-track strip-thumb" d="M251 151 L216 190"/>
+          </svg>
+          <svg class="hand hand-right" viewBox="0 0 300 340">
+            <path class="hand-shape" d="M201 225 C214 207 221 184 228 159 L255 75 C260 61 254 50 243 47 C232 44 224 51 219 65 L191 132 L206 42 C208 27 200 18 188 18 C176 18 170 27 168 41 L154 125 L155 27 C155 12 147 5 135 6 C122 7 117 16 118 31 L116 127 L101 49 C98 35 89 29 78 32 C66 35 63 45 66 59 L83 151 C66 135 53 133 44 142 C34 152 41 163 51 176 L82 222 C93 239 99 267 101 291 L207 291 C204 264 195 241 201 225Z"/>
             <path class="palm-line" d="M179 177 Q146 192 110 176 M189 202 Q149 217 96 196"/>
-            <circle class="finger-dot dot-pinky" cx="242" cy="65" r="7"/><circle class="finger-dot dot-ring" cx="189" cy="39" r="7"/><circle class="finger-dot dot-middle" cx="139" cy="25" r="7"/><circle class="finger-dot dot-index" cx="81" cy="48" r="7"/><circle class="finger-dot dot-thumb" cx="49" cy="151" r="7"/>
-          </g></svg>
+            <path class="finger-track strip-pinky" d="M242 61 L218 137"/><path class="finger-track strip-ring" d="M189 39 L172 137"/><path class="finger-track strip-middle" d="M139 25 L137 137"/><path class="finger-track strip-index" d="M81 48 L96 141"/><path class="finger-track strip-thumb" d="M49 151 L84 190"/>
+          </svg>
         </div>
         <div class="keyboard" id="keyboard" aria-label="On-screen desktop keyboard"></div>
       </div>
-      <div class="keyboard-caption"><span><i class="legend-key"></i> NEXT KEY</span><span><i class="legend-finger"></i> FINGER TO USE</span><span class="caption-note">Rest your index fingers on <kbd>F</kbd> and <kbd>J</kbd></span></div>
+      <div class="keyboard-caption"><span><i class="legend-key"></i> NEXT KEY</span><span><i class="legend-finger"></i> WHOLE FINGER TO USE</span><span class="caption-note">Rest your index fingers on <kbd>F</kbd> and <kbd>J</kbd></span></div>
       <div class="game-footer"><div class="footer-progress"><span id="itemProgress">1 / 8</span><span class="footer-sep">·</span><span id="streakText">Find your rhythm</span></div><div class="level-dots" id="levelDots"></div><button class="next-level" id="nextLevel" hidden>Next level <span>↗</span></button></div>
     </section>
 
-    <footer class="bottom-bar"><span>BUILT FOR YOUR HANDS, ONE KEY AT A TIME</span><span class="audio-controls"><button id="sfxToggle" class="text-toggle" aria-pressed="true">♫ SOUND ON</button><span class="footer-divider"></span><button id="musicToggle" class="text-toggle" aria-pressed="false">♪ MUSIC OFF</button></span></footer>
+    <footer class="bottom-bar"><span>BUILT FOR YOUR HANDS, ONE KEY AT A TIME</span><span>Photo credits are shown with each rotating image.</span></footer>
   </main>
-
   <div class="toast" id="toast" role="status"></div>
-  <dialog id="settingsDialog" class="settings-dialog"><form method="dialog"><div class="dialog-head"><div><div class="eyebrow">MAKE IT YOURS</div><h2>Practice settings</h2></div><button class="icon-button close-dialog" aria-label="Close">×</button></div>
-    <label class="setting-row"><span><b>Practice text size</b><small>Make letters easier to follow</small></span><span class="range-wrap"><input id="fontSize" type="range" min="28" max="72" value="48"><output id="fontSizeValue">48 px</output></span></label>
-    <label class="setting-row"><span><b>Level pass score</b><small>Score needed to unlock the next level</small></span><span class="range-wrap"><input id="passScore" type="range" min="40" max="100" step="10" value="60"><output id="passScoreValue">60%</output></span></label>
-    <div class="setting-row"><span><b>Typing sounds</b><small>Sound on an incorrect key</small></span><button type="button" class="switch on" id="dialogSfx" role="switch" aria-checked="true"><i></i></button></div>
-    <div class="setting-row"><span><b>Background music</b><small>Original instrumental loop</small></span><button type="button" class="switch" id="dialogMusic" role="switch" aria-checked="false"><i></i></button></div>
-    <button class="reset-button" type="button" id="resetProgress">↻ &nbsp; Restart this level</button>
-  </form></dialog>
   <script src="app.js"></script>
 </body>
 </html>
