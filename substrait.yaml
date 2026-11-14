@@ -1,0 +1,15 @@
+description: >
+  Keyfall is a ten-finger touch-typing trainer played as a falling-meteor game.
+  Ten levels run from single letters on the home row up to full teenage life
+  quotes; type a token before it reaches the floor and it explodes. Every run is
+  scored, with per-level leaderboards and personal bests. For students and
+  anyone learning to type without looking at the keyboard.
+
+# Scores and profiles are persisted, so a run survives a redeploy and the
+# leaderboard spans sessions. OceanBase is the platform's backed-up, HA
+# MySQL-wire cluster; the app only needs simple rows.
+database: oceanbase
+
+# Skill/plugin version this app was last deployed with — stamped by
+# /substrait:deploy; do not edit by hand.
+scaffold_version: 2026.09.22.075110

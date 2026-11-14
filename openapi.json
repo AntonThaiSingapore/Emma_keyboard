@@ -1,0 +1,585 @@
+{
+  "openapi": "3.1.0",
+  "info": {
+    "title": "Keyfall",
+    "version": "1.0.0",
+    "description": "A falling-meteor typing trainer. Ships the ten levels' content, scores each finished run on the server, and serves per-level leaderboards and personal bests. Under Google SSO the platform injects X-Forwarded-Email; a missing header means an anonymous player, whose scores are attributed to \"Guest\"."
+  },
+  "paths": {
+    "/health": {
+      "get": {
+        "summary": "Readiness probe used by the platform.",
+        "operationId": "health",
+        "responses": {
+          "200": {
+            "description": "The process is up and serving.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "required": [
+                    "status"
+                  ],
+                  "properties": {
+                    "status": {
+                      "type": "string",
+                      "const": "ok"
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/levels": {
+      "get": {
+        "summary": "List the ten levels with their keymaps, token banks and difficulty settings.",
+        "operationId": "listLevels",
+        "responses": {
+          "200": {
+            "description": "All levels, in ascending order.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/LevelList"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/me": {
+      "get": {
+        "summary": "Return the calling player's identity and personal bests per level.",
+        "operationId": "getMe",
+        "description": "Anonymous callers get signed_in=false with empty best_scores. There is no authentication of its own: identity comes from the platform's X-Forwarded-Email header when SSO is enabled for the app.",
+        "responses": {
+          "200": {
+            "description": "Identity and bests.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Me"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/profile": {
+      "post": {
+        "summary": "Set the signed-in player's display name and rename their past scores.",
+        "operationId": "setProfile",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ProfileIn"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "The name that was saved.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProfileOut"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Anonymous caller; there is no account to name."
+          },
+          "422": {
+            "description": "The name is blank after trimming whitespace."
+          }
+        }
+      }
+    },
+    "/api/scores": {
+      "post": {
+        "summary": "Submit a finished run's raw counters and have the server score and store it.",
+        "operationId": "submitScore",
+        "description": "The client sends only counters (characters, keystrokes, combo, duration). Score, WPM and accuracy are computed server-side, so a stored score cannot disagree with the results screen.",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ScoreIn"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "The stored run, its leaderboard rank, and the player's best.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ScoreResult"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Impossible counters (errors exceeding keystrokes, a duration out of range, more targets than the level contains), a cleared run that did not destroy every target, or a level id that does not exist.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          }
+        }
+      },
+      "get": {
+        "summary": "Read the leaderboard, optionally for one level.",
+        "operationId": "getLeaderboard",
+        "description": "One row per player (their best run), so a single fast learner cannot fill the board. Anonymous runs collapse into one \"Guest\" row.",
+        "parameters": [
+          {
+            "name": "level_id",
+            "in": "query",
+            "required": false,
+            "description": "Restrict to one level (1-10). Omit for all levels mixed.",
+            "schema": {
+              "type": "integer",
+              "minimum": 1,
+              "maximum": 10
+            }
+          },
+          {
+            "name": "limit",
+            "in": "query",
+            "required": false,
+            "description": "Rows to return, 1-50 (default 10).",
+            "schema": {
+              "type": "integer",
+              "default": 10,
+              "minimum": 1,
+              "maximum": 50
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "The board, best first. `you` marks the caller's own row.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ScoreList"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "level_id does not name a level."
+          }
+        }
+      }
+    },
+    "/api/scores/mine": {
+      "get": {
+        "summary": "List the calling player's recent runs, newest first.",
+        "operationId": "getMyScores",
+        "parameters": [
+          {
+            "name": "limit",
+            "in": "query",
+            "required": false,
+            "description": "Rows to return, 1-100 (default 20).",
+            "schema": {
+              "type": "integer",
+              "default": 20,
+              "minimum": 1,
+              "maximum": 100
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "The player's runs, or an empty list when anonymous.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ScoreList"
+                }
+              }
+            }
+          }
+        }
+      }
+    }
+  },
+  "components": {
+    "schemas": {
+      "Level": {
+        "type": "object",
+        "required": [
+          "id",
+          "title",
+          "subtitle",
+          "mode",
+          "keys",
+          "target_count",
+          "spawn_interval",
+          "fall_seconds",
+          "seconds_per_char",
+          "max_on_screen",
+          "lives",
+          "multiplier",
+          "bank"
+        ],
+        "properties": {
+          "id": {
+            "type": "integer",
+            "minimum": 1,
+            "maximum": 10
+          },
+          "title": {
+            "type": "string",
+            "examples": [
+              "Home row"
+            ]
+          },
+          "subtitle": {
+            "type": "string",
+            "description": "Short instruction shown before the run starts."
+          },
+          "mode": {
+            "type": "string",
+            "enum": [
+              "letter",
+              "word",
+              "phrase",
+              "quote"
+            ]
+          },
+          "keys": {
+            "type": "string",
+            "description": "Every character the level can put on screen; drives the on-screen keyboard guide."
+          },
+          "target_count": {
+            "type": "integer",
+            "description": "Tokens to destroy to clear the level."
+          },
+          "spawn_interval": {
+            "type": "number",
+            "description": "Seconds between spawns."
+          },
+          "fall_seconds": {
+            "type": "number",
+            "description": "Base seconds a token takes to fall the field."
+          },
+          "seconds_per_char": {
+            "type": "number",
+            "description": "Extra fall time per character beyond the first, so long tokens stay typeable."
+          },
+          "max_on_screen": {
+            "type": "integer",
+            "description": "Concurrent token limit."
+          },
+          "lives": {
+            "type": "integer",
+            "description": "Tokens allowed to reach the floor before the run ends."
+          },
+          "multiplier": {
+            "type": "number",
+            "description": "Score multiplier for the level."
+          },
+          "bank": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            },
+            "description": "The tokens drawn for this level."
+          }
+        }
+      },
+      "LevelList": {
+        "type": "object",
+        "required": [
+          "levels"
+        ],
+        "properties": {
+          "levels": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/Level"
+            }
+          }
+        }
+      },
+      "Me": {
+        "type": "object",
+        "required": [
+          "signed_in",
+          "email",
+          "display_name",
+          "best_scores"
+        ],
+        "properties": {
+          "signed_in": {
+            "type": "boolean",
+            "description": "True when the platform supplied an identity header."
+          },
+          "email": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "description": "The signed-in address, or null when anonymous."
+          },
+          "display_name": {
+            "type": "string",
+            "description": "\"Guest\" when anonymous."
+          },
+          "best_scores": {
+            "type": "object",
+            "description": "Best score per level, keyed by the level id as a string (JSON object keys are strings).",
+            "additionalProperties": {
+              "type": "integer"
+            }
+          }
+        }
+      },
+      "ProfileIn": {
+        "type": "object",
+        "required": [
+          "display_name"
+        ],
+        "properties": {
+          "display_name": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 24,
+            "description": "Runs of whitespace are collapsed before saving."
+          }
+        }
+      },
+      "ProfileOut": {
+        "type": "object",
+        "required": [
+          "display_name",
+          "signed_in"
+        ],
+        "properties": {
+          "display_name": {
+            "type": "string"
+          },
+          "signed_in": {
+            "type": "boolean"
+          }
+        }
+      },
+      "ScoreIn": {
+        "type": "object",
+        "required": [
+          "level_id",
+          "correct_chars",
+          "keystrokes",
+          "errors",
+          "max_combo",
+          "tokens_destroyed",
+          "lives_left",
+          "cleared",
+          "duration_ms"
+        ],
+        "properties": {
+          "level_id": {
+            "type": "integer",
+            "minimum": 1,
+            "maximum": 10
+          },
+          "correct_chars": {
+            "type": "integer",
+            "minimum": 0,
+            "maximum": 3000
+          },
+          "keystrokes": {
+            "type": "integer",
+            "minimum": 0,
+            "maximum": 5000
+          },
+          "errors": {
+            "type": "integer",
+            "minimum": 0
+          },
+          "max_combo": {
+            "type": "integer",
+            "minimum": 0
+          },
+          "tokens_destroyed": {
+            "type": "integer",
+            "minimum": 0,
+            "maximum": 400
+          },
+          "lives_left": {
+            "type": "integer",
+            "minimum": 0
+          },
+          "cleared": {
+            "type": "boolean",
+            "description": "True only if every target in the level was destroyed."
+          },
+          "duration_ms": {
+            "type": "integer",
+            "minimum": 1000,
+            "maximum": 3600000,
+            "description": "Run length in milliseconds, excluding paused time."
+          }
+        }
+      },
+      "ScoreRow": {
+        "type": "object",
+        "required": [
+          "id",
+          "display_name",
+          "level_id",
+          "score",
+          "wpm",
+          "accuracy",
+          "correct_chars",
+          "keystrokes",
+          "errors",
+          "max_combo",
+          "tokens_destroyed",
+          "lives_left",
+          "cleared",
+          "duration_ms",
+          "created_at",
+          "you"
+        ],
+        "properties": {
+          "id": {
+            "type": "integer"
+          },
+          "display_name": {
+            "type": "string"
+          },
+          "level_id": {
+            "type": "integer",
+            "minimum": 1,
+            "maximum": 10
+          },
+          "score": {
+            "type": "integer",
+            "description": "Server-computed final score."
+          },
+          "wpm": {
+            "type": "number",
+            "description": "Gross words per minute (one word = five correct characters)."
+          },
+          "accuracy": {
+            "type": "number",
+            "minimum": 0,
+            "maximum": 1,
+            "description": "Correct keystrokes over total keystrokes."
+          },
+          "correct_chars": {
+            "type": "integer"
+          },
+          "keystrokes": {
+            "type": "integer"
+          },
+          "errors": {
+            "type": "integer"
+          },
+          "max_combo": {
+            "type": "integer"
+          },
+          "tokens_destroyed": {
+            "type": "integer"
+          },
+          "lives_left": {
+            "type": "integer"
+          },
+          "cleared": {
+            "type": "boolean"
+          },
+          "duration_ms": {
+            "type": "integer"
+          },
+          "created_at": {
+            "type": "string",
+            "description": "ISO-8601 timestamp (UTC)."
+          },
+          "you": {
+            "type": "boolean",
+            "description": "True when this row belongs to the calling player."
+          }
+        }
+      },
+      "ScoreList": {
+        "type": "object",
+        "required": [
+          "level_id",
+          "scores"
+        ],
+        "properties": {
+          "level_id": {
+            "type": [
+              "integer",
+              "null"
+            ],
+            "description": "The filter that was applied, or null for all levels."
+          },
+          "scores": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/ScoreRow"
+            }
+          }
+        }
+      },
+      "ScoreResult": {
+        "type": "object",
+        "required": [
+          "saved",
+          "rank",
+          "personal_best",
+          "new_best"
+        ],
+        "properties": {
+          "saved": {
+            "$ref": "#/components/schemas/ScoreRow"
+          },
+          "rank": {
+            "type": "integer",
+            "minimum": 1,
+            "description": "Position on the level's board, ranked against one best row per player."
+          },
+          "personal_best": {
+            "type": "integer",
+            "description": "The player's best on this level after this run."
+          },
+          "new_best": {
+            "type": "boolean"
+          }
+        }
+      },
+      "Error": {
+        "type": "object",
+        "required": [
+          "detail"
+        ],
+        "properties": {
+          "detail": {
+            "type": "string",
+            "description": "Human-readable reason the request was rejected."
+          }
+        }
+      }
+    }
+  }
+}

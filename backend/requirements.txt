@@ -1,0 +1,5 @@
+fastapi==0.162.7
+uvicorn[standard]==0.54.0
+# MySQL-wire driver for OceanBase / MySQL in deployed environments.
+# Pure Python, so it needs no compiler and installs from a wheel.
+PyMySQL==1.1.2

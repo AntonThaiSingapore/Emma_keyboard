@@ -1,0 +1,23 @@
+# Local development only — the platform ignores this file on upload.
+# Runs MySQL (the same wire protocol as OceanBase) and applies the Flyway schema.
+services:
+  db:
+    image: mysql:8.4
+    environment:
+      MYSQL_ROOT_PASSWORD: root
+      MYSQL_DATABASE: keyfall
+    ports:
+      - "3306:3306"
+    command: --character-set-server=utf8mb4 --collation-server=utf8mb4_unicode_ci
+
+  migrate:
+    image: flyway/flyway:10
+    depends_on:
+      - db
+    command: >
+      -url=jdbc:mysql://db:3306/keyfall?allowPublicKeyRetrieval=true&useSSL=false
+      -user=root -password=root
+      -locations=filesystem:/flyway/sql
+      migrate
+    volumes:
+      - ./backend/resources/db/migration:/flyway/sql:ro
