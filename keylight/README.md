@@ -24,7 +24,7 @@ The Vercel project uses this folder (`keylight/`) as its root. The static entry 
 - Background image rotation, defaulting to 15 seconds
 - Optional upbeat, original pop-style instrumental background music with an on/off switch
 - Automatic progression to the next level after the pass score is reached
-- Large encouragement messages displayed below the typing instruction
+- Encouragement after a correct-key streak, with the streak target increasing by five keys at each level
 - Encouraging feedback, pause, and saved level unlocks
 - Responsive layout and keyboard-only play
 
