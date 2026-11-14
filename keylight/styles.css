@@ -2,3 +2,5 @@
 
 
 
+.practice-stage{min-height:174px}.feedback{position:relative;bottom:auto;height:auto;min-height:30px;margin-top:13px;font-size:18px;font-weight:800;line-height:1.25;transform:translateY(8px);transition:opacity .2s,transform .2s}.feedback.show{transform:translateY(0)}.feedback.error{font-size:14px}@media(max-width:680px){.practice-stage{min-height:158px}.feedback{font-size:15px;margin-top:10px}.feedback.error{font-size:12px}}
+
