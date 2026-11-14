@@ -18,7 +18,7 @@ const settings = {
   sound: localStorage.getItem('keylight-sound') !== 'off',
   music: localStorage.getItem('keylight-music') === 'on'
 };
-let level=0,index=0,charPos=0,score=0,correct=0,attempts=0,streak=0,paused=false;
+let level=0,index=0,charPos=0,score=0,correct=0,attempts=0,streak=0,paused=false,feedbackTimer=null;
 let passed=JSON.parse(localStorage.getItem('keylight-passed')||'[true,false,false,false,false]');
 let audioCtx=null,photoTimer=null,photoPosition=-1,activePhotoLayer='A',musicTimer=null,musicStep=0,musicNextTime=0,autoAdvanceTimer=null;
 const $=id=>document.getElementById(id), promptEl=$('prompt');
@@ -63,22 +63,26 @@ function toast(msg){const el=$('toast');el.textContent=msg;el.classList.add('sho
 function wrongSound(){if(!settings.sound)return;try{audioCtx??=new(window.AudioContext||window.webkitAudioContext)();const o=audioCtx.createOscillator(),g=audioCtx.createGain();o.type='sine';o.frequency.value=180;g.gain.setValueAtTime(.08,audioCtx.currentTime);g.gain.exponentialRampToValueAtTime(.001,audioCtx.currentTime+.16);o.connect(g);g.connect(audioCtx.destination);o.start();o.stop(audioCtx.currentTime+.17)}catch{}}
 function advance(){
   correct++;score+=10;streak++;charPos++;if(charPos>=norm(levels[level].items[index]).length){index++;charPos=0}
-  $('feedback').textContent=streak>=5?'On fire! Keep that rhythm 🔥':streak>=3?'Lovely flow — keep going ✨':'Nice one!';$('feedback').className='feedback show';promptEl.classList.remove('pop');void promptEl.offsetWidth;promptEl.classList.add('pop');
+  const encouragementEvery=(level+1)*5;
+  clearTimeout(feedbackTimer);$('feedback').classList.remove('error');$('feedback').classList.toggle('show',streak%encouragementEvery===0);
+  if(streak%encouragementEvery===0){$('feedback').textContent=streak>=encouragementEvery*2?'Amazing focus! You’re on a roll! 🌟':level===0?'Five in a row — you’ve got this! ✨':`${streak} keys in a row — brilliant work! ✨`;feedbackTimer=setTimeout(()=>$('feedback').classList.remove('show'),2200)}
+  promptEl.classList.remove('pop');void promptEl.offsetWidth;promptEl.classList.add('pop');
   if(index>=levels[level].items.length){
     if(score>=possibleScore()*settings.passScore/100){
       passed[level]=true;localStorage.setItem('keylight-passed',JSON.stringify(passed));
+      clearTimeout(feedbackTimer);
       $('feedback').textContent=level<levels.length-1?'Level complete! Next level coming up! 🎉':'You did it! You finished every level! 🎉';
       $('feedback').classList.add('show');toast(level<levels.length-1?'Brilliant! Moving up a level…':'Amazing work — all five levels complete! ✨');
       if(level<levels.length-1){clearTimeout(autoAdvanceTimer);autoAdvanceTimer=setTimeout(advanceToNextLevel,2400)}
     }else toast(`Level complete! Reach ${settings.passScore}% score to unlock next.`)
-  }else if(streak===5||streak===10)toast(`${streak} in a row! You’re flying! ✨`);
-  draw();setTimeout(()=>$('feedback').classList.remove('show'),850)
+  }
+  draw();
 }
 function handle(ch){
   if(paused||index>=levels[level].items.length)return;
   const expected=norm(levels[level].items[index])[charPos];attempts++;
   if(norm(ch)===expected)advance();
-  else{$('accuracy').textContent=Math.round(correct/attempts*100)+'%';streak=0;$('feedback').textContent='Almost! Try the glowing key.';$('feedback').className='feedback show error';wrongSound();document.querySelector('.key.target')?.animate([{transform:'translateX(0)'},{transform:'translateX(-4px)'},{transform:'translateX(4px)'},{transform:'translateX(0)'}],{duration:180});setTimeout(()=>$('feedback').classList.remove('show'),700)}
+  else{$('accuracy').textContent=Math.round(correct/attempts*100)+'%';streak=0;clearTimeout(feedbackTimer);$('feedback').textContent='Almost! Try the glowing key.';$('feedback').className='feedback show error';wrongSound();document.querySelector('.key.target')?.animate([{transform:'translateX(0)'},{transform:'translateX(-4px)'},{transform:'translateX(4px)'},{transform:'translateX(0)'}],{duration:180});feedbackTimer=setTimeout(()=>$('feedback').classList.remove('show'),900)}
 }
 function syncSettings(){
   $('fontSize').value=settings.fontSize;$('fontSizeValue').value=`${settings.fontSize} px`;promptEl.style.fontSize=`${settings.fontSize}px`;
