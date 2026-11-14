@@ -22,11 +22,13 @@ The Vercel project uses this folder (`keylight/`) as its root. The static entry 
 - Live score, accuracy, streak, and level progress
 - Practice settings below the game for text size, level pass score, background interval, wrong-key sound, and background music
 - Background image rotation, defaulting to 15 seconds
-- Optional gentle instrumental background music, controlled by an on/off switch
+- Optional upbeat, original pop-style instrumental background music with an on/off switch
+- Automatic progression to the next level after the pass score is reached
+- Large encouragement messages displayed below the typing instruction
 - Encouraging feedback, pause, and saved level unlocks
 - Responsive layout and keyboard-only play
 
-Background music is synthesized in the browser and does not use an external player or third-party music stream.
+The upbeat instrumental loop is synthesized in the browser and does not use an external player or third-party music stream.
 
 ## Background image credits
 
