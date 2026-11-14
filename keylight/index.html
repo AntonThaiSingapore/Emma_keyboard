@@ -1,0 +1,74 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta name="theme-color" content="#100c20" />
+  <meta name="description" content="A playful ten-finger typing trainer with guided fingers, five levels, and a full keyboard." />
+  <title>Keylight — Ten-Finger Typing Club</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=DM+Mono:wght@400;500&family=Manrope:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="styles.css" />
+</head>
+<body>
+  <div class="ambient ambient-a"></div><div class="ambient ambient-b"></div>
+  <main class="app-shell">
+    <header class="topbar">
+      <a class="brand" href="#" aria-label="Keylight home"><span class="brand-mark">k<span>.</span></span><span>keylight<span class="brand-sub">TYPING CLUB</span></span></a>
+      <div class="top-meta"><span class="live-dot"></span><span>YOUR PRACTICE SPACE</span><button id="settingsOpen" class="icon-button" aria-label="Open settings" title="Settings">☷</button></div>
+    </header>
+
+    <section class="intro">
+      <div class="eyebrow"><span class="sparkle">✳</span> THE TEN-FINGER METHOD</div>
+      <h1>Find your <span>flow.</span></h1>
+      <p class="intro-copy">Small steps. Steady hands. You'll be typing without looking in no time.</p>
+    </section>
+
+    <section class="game-card" aria-label="Typing practice game">
+      <div class="game-topline">
+        <div class="level-wrap"><span class="level-tag" id="levelTag">LEVEL 01</span><span class="level-name" id="levelName">Home row warm-up</span></div>
+        <div class="session-tools"><span class="stat"><span class="stat-icon">✦</span><b id="score">000</b><small>POINTS</small></span><span class="stat"><span class="stat-icon">◎</span><b id="accuracy">100%</b><small>ACCURACY</small></span><button class="icon-button pause-button" id="pauseButton" aria-label="Pause game" title="Pause">Ⅱ</button></div>
+      </div>
+      <div class="progress-track"><div id="progressBar" class="progress-fill"></div></div>
+      <div class="practice-stage">
+        <div class="stage-kicker"><span class="stage-dot"></span><span id="stageLabel">TYPE THE HIGHLIGHTED KEY</span></div>
+        <div class="prompt" id="prompt" aria-live="polite"></div>
+        <div class="hint-line"><span class="hint-pill" id="fingerHint">LEFT INDEX</span><span id="hintText">Reach for F with your left index finger</span></div>
+        <div id="feedback" class="feedback" aria-live="polite"></div>
+      </div>
+
+      <div class="keyboard-scene">
+        <div class="hands" aria-hidden="true">
+          <svg class="hand hand-left" viewBox="0 0 300 340"><g class="hand-shape">
+            <path d="M99 225 C86 207 79 184 72 159 L45 75 C40 61 46 50 57 47 C68 44 76 51 81 65 L109 132 L94 42 C92 27 100 18 112 18 C124 18 130 27 132 41 L146 125 L145 27 C145 12 153 5 165 6 C178 7 183 16 182 31 L184 127 L199 49 C202 35 211 29 222 32 C234 35 237 45 234 59 L217 151 C234 135 247 133 256 142 C266 152 259 163 249 176 L218 222 C207 239 201 267 199 291 L93 291 C96 264 105 241 99 225Z"/>
+            <path class="palm-line" d="M121 177 Q154 192 190 176 M111 202 Q151 217 204 196"/>
+            <circle class="finger-dot dot-pinky" cx="58" cy="65" r="7"/><circle class="finger-dot dot-ring" cx="111" cy="39" r="7"/><circle class="finger-dot dot-middle" cx="161" cy="25" r="7"/><circle class="finger-dot dot-index" cx="219" cy="48" r="7"/><circle class="finger-dot dot-thumb" cx="251" cy="151" r="7"/>
+          </g></svg>
+          <svg class="hand hand-right" viewBox="0 0 300 340"><g class="hand-shape">
+            <path d="M201 225 C214 207 221 184 228 159 L255 75 C260 61 254 50 243 47 C232 44 224 51 219 65 L191 132 L206 42 C208 27 200 18 188 18 C176 18 170 27 168 41 L154 125 L155 27 C155 12 147 5 135 6 C122 7 117 16 118 31 L116 127 L101 49 C98 35 89 29 78 32 C66 35 63 45 66 59 L83 151 C66 135 53 133 44 142 C34 152 41 163 51 176 L82 222 C93 239 99 267 101 291 L207 291 C204 264 195 241 201 225Z"/>
+            <path class="palm-line" d="M179 177 Q146 192 110 176 M189 202 Q149 217 96 196"/>
+            <circle class="finger-dot dot-pinky" cx="242" cy="65" r="7"/><circle class="finger-dot dot-ring" cx="189" cy="39" r="7"/><circle class="finger-dot dot-middle" cx="139" cy="25" r="7"/><circle class="finger-dot dot-index" cx="81" cy="48" r="7"/><circle class="finger-dot dot-thumb" cx="49" cy="151" r="7"/>
+          </g></svg>
+        </div>
+        <div class="keyboard" id="keyboard" aria-label="On-screen desktop keyboard"></div>
+      </div>
+      <div class="keyboard-caption"><span><i class="legend-key"></i> NEXT KEY</span><span><i class="legend-finger"></i> FINGER TO USE</span><span class="caption-note">Rest your index fingers on <kbd>F</kbd> and <kbd>J</kbd></span></div>
+      <div class="game-footer"><div class="footer-progress"><span id="itemProgress">1 / 8</span><span class="footer-sep">·</span><span id="streakText">Find your rhythm</span></div><div class="level-dots" id="levelDots"></div><button class="next-level" id="nextLevel" hidden>Next level <span>↗</span></button></div>
+    </section>
+
+    <footer class="bottom-bar"><span>BUILT FOR YOUR HANDS, ONE KEY AT A TIME</span><span class="audio-controls"><button id="sfxToggle" class="text-toggle" aria-pressed="true">♫ SOUND ON</button><span class="footer-divider"></span><button id="musicToggle" class="text-toggle" aria-pressed="false">♪ MUSIC OFF</button></span></footer>
+  </main>
+
+  <div class="toast" id="toast" role="status"></div>
+  <dialog id="settingsDialog" class="settings-dialog"><form method="dialog"><div class="dialog-head"><div><div class="eyebrow">MAKE IT YOURS</div><h2>Practice settings</h2></div><button class="icon-button close-dialog" aria-label="Close">×</button></div>
+    <label class="setting-row"><span><b>Practice text size</b><small>Make letters easier to follow</small></span><span class="range-wrap"><input id="fontSize" type="range" min="28" max="72" value="48"><output id="fontSizeValue">48 px</output></span></label>
+    <label class="setting-row"><span><b>Level pass score</b><small>Score needed to unlock the next level</small></span><span class="range-wrap"><input id="passScore" type="range" min="40" max="100" step="10" value="60"><output id="passScoreValue">60%</output></span></label>
+    <div class="setting-row"><span><b>Typing sounds</b><small>Sound on an incorrect key</small></span><button type="button" class="switch on" id="dialogSfx" role="switch" aria-checked="true"><i></i></button></div>
+    <div class="setting-row"><span><b>Background music</b><small>Original instrumental loop</small></span><button type="button" class="switch" id="dialogMusic" role="switch" aria-checked="false"><i></i></button></div>
+    <button class="reset-button" type="button" id="resetProgress">↻ &nbsp; Restart this level</button>
+  </form></dialog>
+  <script src="app.js"></script>
+</body>
+</html>
+
