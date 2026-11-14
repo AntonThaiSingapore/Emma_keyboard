@@ -22,16 +22,6 @@
   <main class="app-shell">
     <header class="topbar">
       <a class="brand" href="#" aria-label="Keylight home"><span class="brand-mark">k<span>.</span></span><span>keylight<span class="brand-sub">TYPING CLUB</span></span></a>
-      <section class="music-dock" aria-label="YouTube or Spotify music player">
-        <div class="music-title"><span class="music-note">♫</span><span>MUSIC</span><span id="musicPlatform" class="platform-label">ADD A LINK</span></div>
-        <form id="musicForm" class="music-form">
-          <label class="sr-only" for="musicUrl">YouTube or Spotify link</label>
-          <input id="musicUrl" type="url" inputmode="url" placeholder="Paste a YouTube or Spotify link" autocomplete="url">
-          <button type="submit" class="small-action">Load</button>
-        </form>
-        <p id="musicStatus" class="music-status">Choose a track or playlist. Playback starts when you press play.</p>
-        <div id="musicPlayerWrap" class="music-player-wrap" hidden><iframe id="musicFrame" title="Music player" allow="autoplay; clipboard-write; encrypted-media; fullscreen; picture-in-picture" loading="lazy"></iframe></div>
-      </section>
       <div class="top-meta"><span class="live-dot"></span><span>YOUR PRACTICE SPACE</span></div>
     </header>
 
@@ -39,21 +29,6 @@
       <div class="eyebrow"><span class="sparkle">✳</span> THE TEN-FINGER METHOD</div>
       <h1>Find your <span>flow.</span></h1>
       <p class="intro-copy">Small steps. Steady hands. You’ll be typing without looking in no time.</p>
-    </section>
-
-    <section class="settings-panel" aria-labelledby="settingsHeading">
-      <div class="settings-heading"><div><div class="eyebrow">MAKE IT YOURS</div><h2 id="settingsHeading">Practice settings</h2></div><button type="button" id="resetLevel" class="reset-button">↻ Restart this level</button></div>
-      <div class="settings-grid">
-        <label class="range-setting"><span class="range-label"><b>Practice text size</b><output id="fontSizeValue">48 px</output></span><small>Make each prompt easier to follow</small><input id="fontSize" type="range" min="28" max="72" value="48" aria-label="Practice text size"></label>
-        <label class="range-setting"><span class="range-label"><b>Level pass score</b><output id="passScoreValue">60%</output></span><small>Score needed to unlock the next level</small><input id="passScore" type="range" min="40" max="100" step="10" value="60" aria-label="Level pass score"></label>
-        <label class="range-setting"><span class="range-label"><b>Background changes</b><output id="photoSecondsValue">15 sec</output></span><small>Choose how long each artist photo stays</small><input id="photoSeconds" type="range" min="5" max="120" step="5" value="15" aria-label="Background image duration"></label>
-        <div class="toggle-setting"><div><b>Wrong-key sound</b><small>Play a soft sound on mistakes</small></div><button type="button" class="switch on" id="sfxToggle" role="switch" aria-checked="true" aria-label="Wrong-key sound"><i></i></button></div>
-      </div>
-      <div class="custom-row">
-        <label for="customPhotoUrl"><b>Add a background image</b><small>Paste an HTTPS image URL to include it in the rotation</small></label>
-        <div class="input-action"><input id="customPhotoUrl" type="url" inputmode="url" placeholder="https://…" autocomplete="url"><button type="button" id="addPhoto" class="small-action">Add image</button></div>
-        <span id="photoStatus" class="photo-status" aria-live="polite">Artist photos rotate automatically.</span>
-      </div>
     </section>
 
     <section class="game-card" aria-label="Typing practice game">
@@ -86,6 +61,17 @@
       </div>
       <div class="keyboard-caption"><span><i class="legend-key"></i> NEXT KEY</span><span><i class="legend-finger"></i> WHOLE FINGER TO USE</span><span class="caption-note">Rest your index fingers on <kbd>F</kbd> and <kbd>J</kbd></span></div>
       <div class="game-footer"><div class="footer-progress"><span id="itemProgress">1 / 8</span><span class="footer-sep">·</span><span id="streakText">Find your rhythm</span></div><div class="level-dots" id="levelDots"></div><button class="next-level" id="nextLevel" hidden>Next level <span>↗</span></button></div>
+    </section>
+
+    <section class="settings-panel" aria-labelledby="settingsHeading">
+      <div class="settings-heading"><div><div class="eyebrow">MAKE IT YOURS</div><h2 id="settingsHeading">Practice settings</h2></div><button type="button" id="resetLevel" class="reset-button">↻ Restart this level</button></div>
+      <div class="settings-grid">
+        <label class="range-setting"><span class="range-label"><b>Practice text size</b><output id="fontSizeValue">48 px</output></span><small>Make each prompt easier to follow</small><input id="fontSize" type="range" min="28" max="72" value="48" aria-label="Practice text size"></label>
+        <label class="range-setting"><span class="range-label"><b>Level pass score</b><output id="passScoreValue">60%</output></span><small>Score needed to unlock the next level</small><input id="passScore" type="range" min="40" max="100" step="10" value="60" aria-label="Level pass score"></label>
+        <label class="range-setting"><span class="range-label"><b>Background changes</b><output id="photoSecondsValue">15 sec</output></span><small>Choose how long each artist photo stays</small><input id="photoSeconds" type="range" min="5" max="120" step="5" value="15" aria-label="Background image duration"></label>
+        <div class="toggle-setting"><div><b>Wrong-key sound</b><small>Play a soft sound on mistakes</small></div><button type="button" class="switch on" id="sfxToggle" role="switch" aria-checked="true" aria-label="Wrong-key sound"><i></i></button></div>
+        <div class="toggle-setting"><div><b>Background music</b><small>Play a gentle instrumental loop</small></div><button type="button" class="switch" id="musicToggle" role="switch" aria-checked="false" aria-label="Background music"><i></i></button></div>
+      </div>
     </section>
 
     <footer class="bottom-bar"><span>BUILT FOR YOUR HANDS, ONE KEY AT A TIME</span><span>Photo credits are shown with each rotating image.</span></footer>
