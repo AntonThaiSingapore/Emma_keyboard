@@ -15,11 +15,12 @@ const settings = {
   fontSize: Number(localStorage.getItem('keylight-font-size')) || 48,
   passScore: Number(localStorage.getItem('keylight-pass-score')) || 60,
   photoSeconds: Number(localStorage.getItem('keylight-photo-seconds')) || 15,
-  sound: localStorage.getItem('keylight-sound') !== 'off'
+  sound: localStorage.getItem('keylight-sound') !== 'off',
+  music: localStorage.getItem('keylight-music') === 'on'
 };
 let level=0,index=0,charPos=0,score=0,correct=0,attempts=0,streak=0,paused=false;
 let passed=JSON.parse(localStorage.getItem('keylight-passed')||'[true,false,false,false,false]');
-let audioCtx=null,photoTimer=null,photoPosition=-1,activePhotoLayer='A';
+let audioCtx=null,photoTimer=null,photoPosition=-1,activePhotoLayer='A',musicGain=null,musicOscillators=[];
 const $=id=>document.getElementById(id), promptEl=$('prompt');
 const licensedPhotos = [
   {title:'BLACKPINK',file:'Blackpink.jpg',page:'https://commons.wikimedia.org/wiki/File:Blackpink.jpg',author:'HeyDay',license:'CC BY 4.0',licenseUrl:'https://creativecommons.org/licenses/by/4.0/'},
@@ -29,8 +30,7 @@ const licensedPhotos = [
   {title:'Stray Kids',file:'Stray Kids in 2026.png',page:'https://commons.wikimedia.org/wiki/File:Stray_Kids_in_2026.png',author:'TV10',license:'CC BY 4.0',licenseUrl:'https://creativecommons.org/licenses/by/4.0/'},
   {title:'BTS',file:'BTS in concert at Wembley Stadium, 2 June 2019 01.jpg',page:'https://commons.wikimedia.org/wiki/File:BTS_in_concert_at_Wembley_Stadium,_2_June_2019_01.jpg',author:'NenehTrainer',license:'CC BY 3.0',licenseUrl:'https://creativecommons.org/licenses/by/3.0/'}
 ];
-let customPhotos=JSON.parse(localStorage.getItem('keylight-custom-photos')||'[]');
-function allPhotos(){return [...licensedPhotos,...customPhotos]}
+function allPhotos(){return licensedPhotos}
 function norm(s){return s.toLowerCase().replace(/[’‘]/g,"'")}
 function fingerFor(ch){return fingers[ch.toLowerCase()]||'rightIndex'}
 function escapeHtml(s){return s.replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]))}
@@ -78,8 +78,21 @@ function syncSettings(){
   $('passScore').value=settings.passScore;$('passScoreValue').value=`${settings.passScore}%`;
   $('photoSeconds').value=settings.photoSeconds;$('photoSecondsValue').value=`${settings.photoSeconds} sec`;
   $('sfxToggle').classList.toggle('on',settings.sound);$('sfxToggle').setAttribute('aria-checked',String(settings.sound));
+  $('musicToggle').classList.toggle('on',settings.music);$('musicToggle').setAttribute('aria-checked',String(settings.music));
 }
 function setSound(on){settings.sound=on;localStorage.setItem('keylight-sound',on?'on':'off');syncSettings()}
+function setMusic(on){
+  settings.music=on;localStorage.setItem('keylight-music',on?'on':'off');
+  try{
+    audioCtx??=new(window.AudioContext||window.webkitAudioContext)();
+    if(on){
+      if(audioCtx.state==='suspended')audioCtx.resume();
+      if(!musicGain){musicGain=audioCtx.createGain();musicGain.gain.value=0;musicGain.connect(audioCtx.destination);[220,277.18,329.63].forEach((hz,i)=>{const osc=audioCtx.createOscillator(),level=audioCtx.createGain();osc.type='sine';osc.frequency.value=hz;level.gain.value=[.32,.2,.13][i];osc.connect(level);level.connect(musicGain);osc.start();musicOscillators.push(osc)});}
+      musicGain.gain.cancelScheduledValues(audioCtx.currentTime);musicGain.gain.setTargetAtTime(.045,audioCtx.currentTime,.8);
+    }else if(musicGain){musicGain.gain.cancelScheduledValues(audioCtx.currentTime);musicGain.gain.setTargetAtTime(0,audioCtx.currentTime,.18)}
+  }catch{}
+  syncSettings();
+}
 function commonsFile(file){return `https://commons.wikimedia.org/wiki/Special:FilePath/${encodeURIComponent(file)}?width=1600`}
 function photoUrl(photo){return photo.url||commonsFile(photo.file)}
 function showPhoto(photo){
@@ -87,51 +100,21 @@ function showPhoto(photo){
   next.onload=()=>{next.classList.add('active');old.classList.remove('active');activePhotoLayer=nextLayer};
   next.onerror=()=>{$('photoStatus').textContent='This image could not be loaded. The next photo will still appear on schedule.'};
   next.src=photoUrl(photo);$('artistTitle').textContent=photo.title||'Custom image';
-  $('artistCredit').textContent=photo.author?photo.author:'Custom image';$('artistCredit').href=photo.page||photo.url;$('artistCredit').title=photo.author?`Photo by ${photo.author}`:'Open image source';
+  $('artistCredit').textContent=photo.author;$('artistCredit').href=photo.page;$('artistCredit').title=`Photo by ${photo.author}`;
   $('artistLicense').textContent=photo.license||'SOURCE';$('artistLicense').href=photo.licenseUrl||photo.page||photo.url;
   if(photo.author){$('photoStatus').textContent=`Now showing ${photo.title}. Photo by ${photo.author}; ${photo.license}.`}
 }
 function nextPhoto(){const photos=allPhotos();if(!photos.length)return;photoPosition=(photoPosition+1)%photos.length;showPhoto(photos[photoPosition])}
 function startPhotoRotation(){clearInterval(photoTimer);photoTimer=setInterval(nextPhoto,settings.photoSeconds*1000)}
-function addCustomPhoto(){
-  const field=$('customPhotoUrl'),raw=field.value.trim();let url;
-  try{url=new URL(raw)}catch{$('photoStatus').textContent='Paste a valid HTTPS image link.';return}
-  if(url.protocol!=='https:'){$('photoStatus').textContent='Use an HTTPS image link.';return}
-  if(customPhotos.some(p=>p.url===url.href)){$('photoStatus').textContent='That image is already in the rotation.';return}
-  customPhotos.push({title:'Custom background',url:url.href,page:url.href,license:'Provided by player'});localStorage.setItem('keylight-custom-photos',JSON.stringify(customPhotos));photoPosition=allPhotos().length-1;showPhoto(allPhotos()[photoPosition]);field.value='';$('photoStatus').textContent='Added to the image rotation. Only use images you have permission to share.';toast('Background image added')
-}
-function embedFromLink(raw){
-  let u;try{u=new URL(raw.trim())}catch{return null}
-  const host=u.hostname.toLowerCase().replace(/^www\./,'');
-  if(['youtube.com','m.youtube.com','music.youtube.com','youtube-nocookie.com','youtu.be'].includes(host)){
-    let id='';if(host==='youtu.be')id=u.pathname.split('/').filter(Boolean)[0]||'';else id=u.searchParams.get('v')||u.pathname.match(/^\/(?:embed|shorts|live|v)\/([^/?]+)/)?.[1]||'';
-    if(!/^[\w-]{11}$/.test(id))return null;
-    return {src:`https://www.youtube-nocookie.com/embed/${id}?controls=1&modestbranding=1&rel=0`,platform:'YOUTUBE',height:128}
-  }
-  if(host==='open.spotify.com'){
-    const match=u.pathname.match(/^\/(?:intl-[a-z]{2}\/)?(track|album|playlist|episode|show)\/([A-Za-z0-9]+)\/?$/);
-    if(!match)return null;
-    return {src:`https://open.spotify.com/embed/${match[1]}/${match[2]}?utm_source=generator&theme=0`,platform:'SPOTIFY',height:152}
-  }
-  return null
-}
-function loadMusic(raw,save=true){
-  const embed=embedFromLink(raw);if(!embed){$('musicStatus').textContent='Use a YouTube video link or a Spotify track, album, or playlist link.';return false}
-  $('musicFrame').src=embed.src;$('musicFrame').style.height=`${embed.height}px`;$('musicPlayerWrap').hidden=false;$('musicPlatform').textContent=embed.platform;$('musicStatus').textContent='Player ready. Press play inside the widget.';
-  if(save)localStorage.setItem('keylight-music-url',raw.trim());return true
-}
 function initSettings(){
   syncSettings();
   $('fontSize').addEventListener('input',e=>{settings.fontSize=Number(e.target.value);localStorage.setItem('keylight-font-size',String(settings.fontSize));syncSettings()});
   $('passScore').addEventListener('input',e=>{settings.passScore=Number(e.target.value);localStorage.setItem('keylight-pass-score',String(settings.passScore));syncSettings()});
   $('photoSeconds').addEventListener('input',e=>{settings.photoSeconds=Number(e.target.value);localStorage.setItem('keylight-photo-seconds',String(settings.photoSeconds));syncSettings();startPhotoRotation()});
   $('sfxToggle').addEventListener('click',()=>setSound(!settings.sound));
+  $('musicToggle').addEventListener('click',()=>setMusic(!settings.music));
   $('resetLevel').addEventListener('click',()=>{index=0;charPos=0;score=0;correct=0;attempts=0;streak=0;paused=false;draw();toast('Fresh start. You’ve got this!')});
-  $('addPhoto').addEventListener('click',addCustomPhoto);
-  $('customPhotoUrl').addEventListener('keydown',e=>{if(e.key==='Enter'){e.preventDefault();addCustomPhoto()}});
-  $('musicForm').addEventListener('submit',e=>{e.preventDefault();loadMusic($('musicUrl').value)});
-  $('musicUrl').addEventListener('keydown',e=>{if(e.key==='Enter'){e.preventDefault();loadMusic(e.currentTarget.value)}});
-  const savedMusic=localStorage.getItem('keylight-music-url');if(savedMusic){$('musicUrl').value=savedMusic;loadMusic(savedMusic,false)}
+  if(settings.music)setMusic(true);
 }
 $('nextLevel').addEventListener('click',()=>{if(level<levels.length-1&&score>=possibleScore()*settings.passScore/100){level++;index=0;charPos=0;score=0;correct=0;attempts=0;streak=0;draw()}else if(level<levels.length-1)toast(`Reach ${settings.passScore}% score to unlock next`);else{toast('You completed every level! Amazing work!');level=0;index=0;charPos=0;score=0;correct=0;attempts=0;streak=0;draw()}});
 $('pauseButton').addEventListener('click',()=>{paused=!paused;draw();toast(paused?'Practice paused':'Back in the flow')});
