@@ -20,7 +20,7 @@ const settings = {
 };
 let level=0,index=0,charPos=0,score=0,correct=0,attempts=0,streak=0,paused=false;
 let passed=JSON.parse(localStorage.getItem('keylight-passed')||'[true,false,false,false,false]');
-let audioCtx=null,photoTimer=null,photoPosition=-1,activePhotoLayer='A',musicGain=null,musicOscillators=[];
+let audioCtx=null,photoTimer=null,photoPosition=-1,activePhotoLayer='A',musicTimer=null,musicStep=0,musicNextTime=0,autoAdvanceTimer=null;
 const $=id=>document.getElementById(id), promptEl=$('prompt');
 const licensedPhotos = [
   {title:'BLACKPINK',file:'Blackpink.jpg',page:'https://commons.wikimedia.org/wiki/File:Blackpink.jpg',author:'HeyDay',license:'CC BY 4.0',licenseUrl:'https://creativecommons.org/licenses/by/4.0/'},
@@ -64,7 +64,14 @@ function wrongSound(){if(!settings.sound)return;try{audioCtx??=new(window.AudioC
 function advance(){
   correct++;score+=10;streak++;charPos++;if(charPos>=norm(levels[level].items[index]).length){index++;charPos=0}
   $('feedback').textContent=streak>=5?'On fire! Keep that rhythm 🔥':streak>=3?'Lovely flow — keep going ✨':'Nice one!';$('feedback').className='feedback show';promptEl.classList.remove('pop');void promptEl.offsetWidth;promptEl.classList.add('pop');
-  if(index>=levels[level].items.length){if(score>=possibleScore()*settings.passScore/100){passed[level]=true;localStorage.setItem('keylight-passed',JSON.stringify(passed));toast(`Level ${level+1} complete! You did it! ✨`)}else toast(`Level complete! Reach ${settings.passScore}% score to unlock next.`)}else if(streak===5||streak===10)toast(`${streak} in a row! You’re flying! ✨`);
+  if(index>=levels[level].items.length){
+    if(score>=possibleScore()*settings.passScore/100){
+      passed[level]=true;localStorage.setItem('keylight-passed',JSON.stringify(passed));
+      $('feedback').textContent=level<levels.length-1?'Level complete! Next level coming up! 🎉':'You did it! You finished every level! 🎉';
+      $('feedback').classList.add('show');toast(level<levels.length-1?'Brilliant! Moving up a level…':'Amazing work — all five levels complete! ✨');
+      if(level<levels.length-1){clearTimeout(autoAdvanceTimer);autoAdvanceTimer=setTimeout(advanceToNextLevel,2400)}
+    }else toast(`Level complete! Reach ${settings.passScore}% score to unlock next.`)
+  }else if(streak===5||streak===10)toast(`${streak} in a row! You’re flying! ✨`);
   draw();setTimeout(()=>$('feedback').classList.remove('show'),850)
 }
 function handle(ch){
@@ -81,17 +88,45 @@ function syncSettings(){
   $('musicToggle').classList.toggle('on',settings.music);$('musicToggle').setAttribute('aria-checked',String(settings.music));
 }
 function setSound(on){settings.sound=on;localStorage.setItem('keylight-sound',on?'on':'off');syncSettings()}
+function playMusicTone(frequency,time,duration,shape='triangle',volume=.04){
+  const osc=audioCtx.createOscillator(),gain=audioCtx.createGain(),filter=audioCtx.createBiquadFilter();
+  osc.type=shape;osc.frequency.setValueAtTime(frequency,time);filter.type='lowpass';filter.frequency.value=shape==='sawtooth'?1500:3200;
+  gain.gain.setValueAtTime(.0001,time);gain.gain.exponentialRampToValueAtTime(volume,time+.012);gain.gain.exponentialRampToValueAtTime(.0001,time+duration);
+  osc.connect(filter);filter.connect(gain);gain.connect(audioCtx.destination);osc.start(time);osc.stop(time+duration+.03);
+}
+function playKick(time){
+  const osc=audioCtx.createOscillator(),gain=audioCtx.createGain();osc.type='sine';osc.frequency.setValueAtTime(125,time);osc.frequency.exponentialRampToValueAtTime(48,time+.13);
+  gain.gain.setValueAtTime(.16,time);gain.gain.exponentialRampToValueAtTime(.0001,time+.16);osc.connect(gain);gain.connect(audioCtx.destination);osc.start(time);osc.stop(time+.17);
+}
+function playHat(time){
+  const length=Math.floor(audioCtx.sampleRate*.045),buffer=audioCtx.createBuffer(1,length,audioCtx.sampleRate),data=buffer.getChannelData(0);
+  for(let i=0;i<length;i++)data[i]=(Math.random()*2-1)*(1-i/length);
+  const source=audioCtx.createBufferSource(),filter=audioCtx.createBiquadFilter(),gain=audioCtx.createGain();source.buffer=buffer;filter.type='highpass';filter.frequency.value=8500;gain.gain.value=.025;source.connect(filter);filter.connect(gain);gain.connect(audioCtx.destination);source.start(time);
+}
+function scheduleMusicStep(){
+  if(!settings.music||!audioCtx)return;
+  const beat=.25,chords=[[0,4,7],[7,11,14],[9,12,16],[5,9,12]],melody=[60,64,67,72,67,64,62,64,67,71,74,71,69,72,76,72,65,69,72,77,72,69,67,69,64,67,72,76,72,67,64,67];
+  while(musicNextTime<audioCtx.currentTime+.1){
+    const step=musicStep%16,bar=Math.floor(musicStep/16)%chords.length,base=261.63*Math.pow(2,bar===1?7/12:bar===2?9/12:bar===3?5/12:0),chord=chords[bar];
+    if(step%4===0){chord.forEach((n,i)=>playMusicTone(base*Math.pow(2,n/12),musicNextTime,.88,'sine',i===0?.014:.008));playKick(musicNextTime)}
+    if(step%4===2)playKick(musicNextTime);if(step%2===1)playHat(musicNextTime);
+    const note=melody[musicStep%melody.length];playMusicTone(440*Math.pow(2,(note-69)/12),musicNextTime,.19,'triangle',.048);
+    const arp=chord[(step/2|0)%3]+12;playMusicTone(base*Math.pow(2,arp/12),musicNextTime,.13,'sawtooth',.012);
+    musicStep++;musicNextTime+=beat;
+  }
+}
 function setMusic(on){
   settings.music=on;localStorage.setItem('keylight-music',on?'on':'off');
   try{
     audioCtx??=new(window.AudioContext||window.webkitAudioContext)();
-    if(on){
-      if(audioCtx.state==='suspended')audioCtx.resume();
-      if(!musicGain){musicGain=audioCtx.createGain();musicGain.gain.value=0;musicGain.connect(audioCtx.destination);[220,277.18,329.63].forEach((hz,i)=>{const osc=audioCtx.createOscillator(),level=audioCtx.createGain();osc.type='sine';osc.frequency.value=hz;level.gain.value=[.32,.2,.13][i];osc.connect(level);level.connect(musicGain);osc.start();musicOscillators.push(osc)});}
-      musicGain.gain.cancelScheduledValues(audioCtx.currentTime);musicGain.gain.setTargetAtTime(.045,audioCtx.currentTime,.8);
-    }else if(musicGain){musicGain.gain.cancelScheduledValues(audioCtx.currentTime);musicGain.gain.setTargetAtTime(0,audioCtx.currentTime,.18)}
+    if(on){audioCtx.resume();musicNextTime=audioCtx.currentTime+.05;clearInterval(musicTimer);musicTimer=setInterval(scheduleMusicStep,40)}
+    else{clearInterval(musicTimer);musicTimer=null}
   }catch{}
   syncSettings();
+}
+function advanceToNextLevel(){
+  clearTimeout(autoAdvanceTimer);autoAdvanceTimer=null;if(level>=levels.length-1)return;
+  level++;index=0;charPos=0;score=0;correct=0;attempts=0;streak=0;paused=false;draw();
 }
 function commonsFile(file){return `https://commons.wikimedia.org/wiki/Special:FilePath/${encodeURIComponent(file)}?width=1600`}
 function photoUrl(photo){return photo.url||commonsFile(photo.file)}
@@ -113,10 +148,10 @@ function initSettings(){
   $('photoSeconds').addEventListener('input',e=>{settings.photoSeconds=Number(e.target.value);localStorage.setItem('keylight-photo-seconds',String(settings.photoSeconds));syncSettings();startPhotoRotation()});
   $('sfxToggle').addEventListener('click',()=>setSound(!settings.sound));
   $('musicToggle').addEventListener('click',()=>setMusic(!settings.music));
-  $('resetLevel').addEventListener('click',()=>{index=0;charPos=0;score=0;correct=0;attempts=0;streak=0;paused=false;draw();toast('Fresh start. You’ve got this!')});
+  $('resetLevel').addEventListener('click',()=>{clearTimeout(autoAdvanceTimer);autoAdvanceTimer=null;index=0;charPos=0;score=0;correct=0;attempts=0;streak=0;paused=false;draw();toast('Fresh start. You’ve got this!')});
   if(settings.music)setMusic(true);
 }
-$('nextLevel').addEventListener('click',()=>{if(level<levels.length-1&&score>=possibleScore()*settings.passScore/100){level++;index=0;charPos=0;score=0;correct=0;attempts=0;streak=0;draw()}else if(level<levels.length-1)toast(`Reach ${settings.passScore}% score to unlock next`);else{toast('You completed every level! Amazing work!');level=0;index=0;charPos=0;score=0;correct=0;attempts=0;streak=0;draw()}});
+$('nextLevel').addEventListener('click',()=>{if(level<levels.length-1&&score>=possibleScore()*settings.passScore/100)advanceToNextLevel();else if(level<levels.length-1)toast(`Reach ${settings.passScore}% score to unlock next`);else toast('You completed every level! Amazing work!')});
 $('pauseButton').addEventListener('click',()=>{paused=!paused;draw();toast(paused?'Practice paused':'Back in the flow')});
 document.addEventListener('keydown',e=>{if(e.ctrlKey||e.metaKey||e.altKey)return;if(e.key==='Escape'){paused=!paused;draw();toast(paused?'Practice paused':'Back in the flow');return}if(e.key.length===1&& !e.target.matches('input,textarea,select,button,a,[contenteditable="true"]')){e.preventDefault();handle(e.key)}});
 buildKeyboard();initSettings();draw();nextPhoto();startPhotoRotation();
